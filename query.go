@@ -13,7 +13,7 @@ import (
 	"github.com/mingmxren/morm/structreflect"
 )
 
-func QuerySqlArgs(p PersistentObject, opts ...query.Option) (sql string, args []interface{}, err error) {
+func QuestionQuerySqlArgs(p PersistentObject, opts ...query.Option) (sql string, args []interface{}, err error) {
 	qo := &query.Options{}
 	for _, opt := range opts {
 		opt(qo)
@@ -77,7 +77,7 @@ func QueryByPrimaryKey(ctx context.Context, db QueryxClient, p PersistentObjectW
 }
 
 func Query(ctx context.Context, db QueryxClient, p PersistentObject, opts ...query.Option) ([]PersistentObject, error) {
-	sql, args, err := QuerySqlArgs(p, opts...)
+	sql, args, err := QuestionQuerySqlArgs(p, opts...)
 	if err != nil {
 		return nil, err
 	}

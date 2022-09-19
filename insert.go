@@ -9,7 +9,7 @@ import (
 	"github.com/mingmxren/morm/options/insert"
 )
 
-func InsertSqlArgs(p PersistentObject, opts ...insert.Option) (sql string, err error) {
+func NamedInsertSql(p PersistentObject, opts ...insert.Option) (sql string, err error) {
 	qo := &insert.Options{}
 	for _, opt := range opts {
 		opt(qo)
@@ -31,9 +31,31 @@ func InsertSqlArgs(p PersistentObject, opts ...insert.Option) (sql string, err e
 	return sql, nil
 }
 
+func QuestionInsertSqlArgs(p PersistentObject, opts ...insert.Option) (sql string, args []interface{}, err error) {
+	qo := &insert.Options{}
+	for _, opt := range opts {
+		opt(qo)
+	}
+
+	names, values, err := dbtag.NameValuesWithTargetOrIgnore(p, qo.Fields, qo.IgnoreFields)
+	if err != nil {
+		return "", nil, err
+	}
+	aliases := make([]string, len(names))
+	for i := range names {
+		aliases[i] = "?"
+	}
+
+	sql = fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s)",
+		p.TableName(), strings.Join(names, ","), strings.Join(aliases, ","),
+	)
+
+	return sql, values, nil
+}
+
 func Insert(ctx context.Context, db NamedExecClient, ps []PersistentObject,
 	opts ...insert.Option) (rowsAffected int64, err error) {
-	sql, err := InsertSqlArgs(ps[0], opts...)
+	sql, err := NamedInsertSql(ps[0], opts...)
 	if err != nil {
 		return 0, err
 	}
@@ -44,7 +66,15 @@ func Insert(ctx context.Context, db NamedExecClient, ps []PersistentObject,
 	return result.RowsAffected()
 }
 
-func InsertOne(ctx context.Context, db NamedExecClient, p PersistentObject, opts ...insert.Option) (rowsAffected int64,
+func InsertOne(ctx context.Context, db ExecClient, p PersistentObject, opts ...insert.Option) (rowsAffected int64,
 	err error) {
-	return Insert(ctx, db, []PersistentObject{p}, opts...)
+	sql, values, err := QuestionInsertSqlArgs(p, opts...)
+	if err != nil {
+		return 0, err
+	}
+	result, err := db.ExecContext(ctx, sql, values...)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }

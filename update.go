@@ -11,7 +11,7 @@ import (
 	"github.com/mingmxren/morm/options/update"
 )
 
-func UpdateSqlArgs(p PersistentObject, opts ...update.Option) (sql string, args []interface{}, err error) {
+func QuestionUpdateSqlArgs(p PersistentObject, opts ...update.Option) (sql string, args []interface{}, err error) {
 	qo := &update.Options{}
 	for _, opt := range opts {
 		opt(qo)
@@ -40,7 +40,7 @@ func UpdateSqlArgs(p PersistentObject, opts ...update.Option) (sql string, args 
 
 func Update(ctx context.Context, db ExecClient, p PersistentObject, opts ...update.Option) (rowsAffected int64,
 	err error) {
-	sql, args, err := UpdateSqlArgs(p, opts...)
+	sql, args, err := QuestionUpdateSqlArgs(p, opts...)
 	if err != nil {
 		return 0, err
 	}
